@@ -7,8 +7,8 @@
 Ứng dụng console .NET để:
 
 - Tạo/kiểm tra schema PostgreSQL qua EF Core
-- Seed dữ liệu mẫu lớn (User/Product/Order/OrderDetail)
-- Benchmark LINQ đọc toàn bộ dữ liệu và in thời gian theo milliseconds
+- Seed dữ liệu mẫu lớn (User/Product/Order/OrderDetail/ActivityLog)
+- Benchmark LINQ và đo thời gian truy vấn theo milliseconds
 
 ### 2) Yêu cầu
 
@@ -39,37 +39,45 @@ Nếu dùng pgAdmin trong Docker, có thể cần host:
 Trong `Program.cs`:
 
 ```csharp
-var runSeeder = false;
+var runSeeder = true;
 ```
 
 - `false`: không seed, chỉ benchmark
 - `true`: chạy seed trước, sau đó benchmark
 
-Thông số seed mặc định trong `Program.cs`:
+Thông số seed mặc định nằm trong `SeedProgram.cs` (class `DataSeederRunner`):
 
 - `userTarget = 10_000_000`
 - `userBatchSize = 20_000`
 - `productCount = 5_000`
-- `orderCount = 100_000`
+- `productBatchSize = 5_000`
+- `orderCount = 1_000_000`
+- `orderBatchSize = 20_000`
+- `activityLogTarget = orderCount * 5`
+- `activityLogBatchSize = 20_000`
 
-### 5) Chạy ứng dụng
+### 5) Lưu ý về schema/entity
+
+- Tất cả khóa chính và khóa ngoại chính đã dùng `Guid`
+- Không tạo index phụ, chỉ giữ khóa chính `Id`
+- Bảng chính: `Users`, `Products`, `Orders`, `OrderDetails`, `ActivityLogs`
+
+### 6) Chạy ứng dụng
 
 Tại thư mục project:
 
 ```bash
-dotnet restore
-dotnet run --project DataSeederTest.csproj
+dotnet run
 ```
 
-### 6) Output benchmark
+### 7) Output benchmark
 
 App in ra:
 
-- Tong so dong doc duoc moi bang
-- Thoi gian doc tung bang (ms)
-- Tong thoi gian full read benchmark (ms)
+- Thời gian đọc users (ms)
+- JSON preview của users (theo logic hiện tại trong `Program.cs`)
 
-### 7) Lưu ý
+### 8) Lưu ý
 
 - Lần đầu seed 10 triệu users có thể tốn nhiều thời gian và I/O
 - Tránh bật `runSeeder = true` trong mỗi lần test benchmark nếu đã có dữ liệu
@@ -84,8 +92,8 @@ App in ra:
 This .NET console app is used to:
 
 - Create/ensure PostgreSQL schema using EF Core
-- Seed large sample data (User/Product/Order/OrderDetail)
-- Benchmark LINQ full-table reads and print elapsed milliseconds
+- Seed large sample data (User/Product/Order/OrderDetail/ActivityLog)
+- Benchmark LINQ queries and print elapsed milliseconds
 
 ### 2) Requirements
 
@@ -116,37 +124,45 @@ If pgAdmin is running in Docker, you may need host:
 In `Program.cs`:
 
 ```csharp
-var runSeeder = false;
+var runSeeder = true;
 ```
 
 - `false`: skip seeding, run benchmark only
 - `true`: run seeding first, then benchmark
 
-Default seed settings in `Program.cs`:
+Default seed settings are now in `SeedProgram.cs` (`DataSeederRunner`):
 
 - `userTarget = 10_000_000`
 - `userBatchSize = 20_000`
 - `productCount = 5_000`
-- `orderCount = 100_000`
+- `productBatchSize = 5_000`
+- `orderCount = 1_000_000`
+- `orderBatchSize = 20_000`
+- `activityLogTarget = orderCount * 5`
+- `activityLogBatchSize = 20_000`
 
-### 5) Run the app
+### 5) Schema/entity notes
+
+- All primary and related key fields use `Guid`
+- No secondary indexes are configured, only the primary key `Id`
+- Main tables: `Users`, `Products`, `Orders`, `OrderDetails`, `ActivityLogs`
+
+### 6) Run the app
 
 From project folder:
 
 ```bash
-dotnet restore
-dotnet run --project DataSeederTest.csproj
+dotnet run
 ```
 
-### 6) Benchmark output
+### 7) Benchmark output
 
 The app prints:
 
-- Number of rows read per table
-- Per-table elapsed time (ms)
-- Total full read benchmark time (ms)
+- Users query elapsed time (ms)
+- Users JSON preview (current logic in `Program.cs`)
 
-### 7) Notes
+### 8) Notes
 
 - First run with 10 million users can take significant time and I/O
 - Keep `runSeeder = false` for repeat benchmark runs after data is seeded

@@ -1,15 +1,12 @@
 ﻿using System.Diagnostics;
+using System.Text.Json;
 using DataSeederTest;
 using Microsoft.EntityFrameworkCore;
 
-var runSeeder = false;
-const int userTarget = 10_000_000;
-const int userBatchSize = 20_000;
-const int productCount = 5_000;
-const int orderCount = 100_000;
+var runSeeder = true;
 
 var connectionString = Environment.GetEnvironmentVariable("PG_CONNECTION_STRING")
-?? "Host=localhost;Port=5432;Database=dataseeder_test;Username=postgres;Password=your_password";
+?? "Host=localhost;Port=5432;Database=dataseeder_test;Username=postgres;Password=drakekarto";
 
 var dbOptions = new DbContextOptionsBuilder<AppDbContext>()
     .UseNpgsql(connectionString, npgsql =>
@@ -28,7 +25,7 @@ try
 
     Console.WriteLine($"Seeder is {(runSeeder ? "ON" : "OFF")}.");
     if (runSeeder)
-        await DataSeederRunner.RunAsync(db, userTarget, userBatchSize, productCount, orderCount);
+        await DataSeederRunner.RunAsync(db);
 
     await BenchmarkReadAllAsync(db);
 }
@@ -45,27 +42,19 @@ return;
 static async Task BenchmarkReadAllAsync(AppDbContext db)
 {
     Console.WriteLine("Starting LINQ full read benchmark...");
-    var totalStopwatch = Stopwatch.StartNew();
 
-    await MeasureAsync("users", db.Users.AsNoTracking());
-    await MeasureAsync("products", db.Products.AsNoTracking());
-    await MeasureAsync("orders", db.Orders.AsNoTracking());
-    await MeasureAsync("order_details", db.OrderDetails.AsNoTracking());
+    var usersStopwatch = Stopwatch.StartNew();
+    var users = await db.Users
+        .AsNoTracking()
+        .ToListAsync();
 
-    totalStopwatch.Stop();
-    Console.WriteLine($"TOTAL full read benchmark: {totalStopwatch.ElapsedMilliseconds:N0} ms");
-}
+    usersStopwatch.Stop();
 
-static async Task MeasureAsync<T>(string tableName, IQueryable<T> query) where T : class
-{
-    var count = 0L;
-    var stopwatch = Stopwatch.StartNew();
+    Console.WriteLine($"users preview: {users.Count:N0} rows in {usersStopwatch.ElapsedMilliseconds:N0} ms");
 
-    await foreach (var _ in query.AsAsyncEnumerable())
+    var usersJson = JsonSerializer.Serialize(users.First(), new JsonSerializerOptions
     {
-        count++;
-    }
-
-    stopwatch.Stop();
-    Console.WriteLine($"{tableName}: {count:N0} rows in {stopwatch.ElapsedMilliseconds:N0} ms");
+        WriteIndented = true,
+    });
+    Console.WriteLine(usersJson);
 }
