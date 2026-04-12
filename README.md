@@ -48,18 +48,18 @@ var runSeeder = true;
 Thông số seed mặc định nằm trong `SeedProgram.cs` (class `DataSeederRunner`):
 
 - `userTarget = 10_000_000`
-- `userBatchSize = 20_000`
+- `userBatchSize = 50_000`
 - `productCount = 5_000`
 - `productBatchSize = 5_000`
 - `orderCount = 1_000_000`
-- `orderBatchSize = 20_000`
-- `activityLogTarget = orderCount * 5`
-- `activityLogBatchSize = 20_000`
+- `orderBatchSize = 100_000`
+- `activityLogTarget = orderCount * 3`
+- `activityLogBatchSize = 50_000`
 
 ### 5) Lưu ý về schema/entity
 
 - Tất cả khóa chính và khóa ngoại chính đã dùng `Guid`
-- Không tạo index phụ, chỉ giữ khóa chính `Id`
+- Có thêm index cho `Users.Email` (ngoài khóa chính `Id`)
 - Bảng chính: `Users`, `Products`, `Orders`, `OrderDetails`, `ActivityLogs`
 
 ### 6) Chạy ứng dụng
@@ -70,14 +70,39 @@ Tại thư mục project:
 dotnet run
 ```
 
-### 7) Output benchmark
+### 7) Thêm migration (EF Core)
+
+Khi thay đổi entity/schema (ví dụ thêm index), tạo migration:
+
+```bash
+dotnet ef migrations add TenMigration
+```
+
+Ví dụ:
+
+```bash
+dotnet ef migrations add AddUserIndexes
+```
+
+Áp dụng migration vào database:
+
+```bash
+dotnet ef database update
+```
+
+Nếu database đang có dữ liệu lớn, nên:
+
+- Backup trước khi update
+- Kiểm tra file migration để chắc không có thao tác rủi ro (drop table/drop column)
+
+### 8) Output benchmark
 
 App in ra:
 
 - Thời gian đọc users (ms)
 - JSON preview của users (theo logic hiện tại trong `Program.cs`)
 
-### 8) Lưu ý
+### 9) Lưu ý
 
 - Lần đầu seed 10 triệu users có thể tốn nhiều thời gian và I/O
 - Tránh bật `runSeeder = true` trong mỗi lần test benchmark nếu đã có dữ liệu
@@ -133,18 +158,18 @@ var runSeeder = true;
 Default seed settings are now in `SeedProgram.cs` (`DataSeederRunner`):
 
 - `userTarget = 10_000_000`
-- `userBatchSize = 20_000`
+- `userBatchSize = 50_000`
 - `productCount = 5_000`
 - `productBatchSize = 5_000`
 - `orderCount = 1_000_000`
-- `orderBatchSize = 20_000`
-- `activityLogTarget = orderCount * 5`
-- `activityLogBatchSize = 20_000`
+- `orderBatchSize = 100_000`
+- `activityLogTarget = orderCount * 3`
+- `activityLogBatchSize = 50_000`
 
 ### 5) Schema/entity notes
 
 - All primary and related key fields use `Guid`
-- No secondary indexes are configured, only the primary key `Id`
+- There is an additional index on `Users.Email` (besides primary key `Id`)
 - Main tables: `Users`, `Products`, `Orders`, `OrderDetails`, `ActivityLogs`
 
 ### 6) Run the app
@@ -155,14 +180,39 @@ From project folder:
 dotnet run
 ```
 
-### 7) Benchmark output
+### 7) Add migration (EF Core)
+
+When you change entities/schema (for example adding an index), create a migration:
+
+```bash
+dotnet ef migrations add MigrationName
+```
+
+Example:
+
+```bash
+dotnet ef migrations add AddUserIndexes
+```
+
+Apply migration to the database:
+
+```bash
+dotnet ef database update
+```
+
+If your database already has large/important data, you should:
+
+- Create a backup before updating
+- Review the generated migration file for risky operations (drop table/drop column)
+
+### 8) Benchmark output
 
 The app prints:
 
 - Users query elapsed time (ms)
 - Users JSON preview (current logic in `Program.cs`)
 
-### 8) Notes
+### 9) Notes
 
 - First run with 10 million users can take significant time and I/O
 - Keep `runSeeder = false` for repeat benchmark runs after data is seeded

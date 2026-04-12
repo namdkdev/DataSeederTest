@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 var runSeeder = true;
 
 var connectionString = Environment.GetEnvironmentVariable("PG_CONNECTION_STRING")
-?? "Host=localhost;Port=5432;Database=dataseeder_test;Username=postgres;Password=drakekarto";
+?? "Host=localhost;Port=5432;Database=dataseeder_test;Username=postgres;Password=your_password";
 
 var dbOptions = new DbContextOptionsBuilder<AppDbContext>()
     .UseNpgsql(connectionString, npgsql =>
@@ -45,6 +45,13 @@ static async Task BenchmarkReadAllAsync(AppDbContext db)
 
     var usersStopwatch = Stopwatch.StartNew();
     var users = await db.Users
+        .Select(u => new
+        {
+            u.Id,
+            u.Username,
+            u.Email
+        })
+        .Where(u => u.Email == "frank_wolff@gmail.com")
         .AsNoTracking()
         .ToListAsync();
 
